@@ -1,6 +1,5 @@
 using UnityEngine;
 
-[RequireComponent(typeof(CharacterController))]
 public class CharacterMotor : MonoBehaviour
 {
     [Header("References")]
@@ -23,16 +22,29 @@ public class CharacterMotor : MonoBehaviour
     public bool IsGrounded => groundChecker.IsGrounded;
 
     private float verticalVelocity;
-    [SerializeField] private CharacterController controller;
+    [SerializeField] private Rigidbody controller;
 
     public Vector3 MoveDirection { get; private set; }
     public bool IsMoving => MoveDirection.sqrMagnitude > 0.01f;
 
+    [SerializeField] private bool autoRun;
+    private bool jumpRequested;
+
+    public void AutoRun(bool isAuto, [Bridge.Ref] Vector3 direction)
+    {
+        autoRun = isAuto;
+        MoveDirection = Vector3.ClampMagnitude(direction, 1f);
+    }
     private void Update()
     {
-        ApplyJump();
-        ApplyGravity();
+        if (characterInput.Jump)
+            jumpRequested = true;
         ApplyMotor();
+    }
+    private void FixedUpdate()
+    {
+        ApplyGravity();
+        ApplyJump();
         Move();
     }
     private void ApplyGravity()
@@ -42,18 +54,19 @@ public class CharacterMotor : MonoBehaviour
             verticalVelocity = -2f;
         }
 
-        verticalVelocity += gravity * Time.deltaTime;
+        verticalVelocity += gravity * Time.fixedDeltaTime;
     }
     private void Move()
     {
         Vector3 motion = MoveDirection * moveSpeed;
         motion.y = verticalVelocity;
 
-        controller.Move(motion * Time.deltaTime);
+        controller.linearVelocity = motion;
     }
 
     private void ApplyMotor()
     {
+        if (autoRun) return;
         Vector2 input = characterInput.Move;
 
         Vector3 forward = cameraYawTransform.forward;
@@ -70,11 +83,10 @@ public class CharacterMotor : MonoBehaviour
     }
     private void ApplyJump()
     {
-        if (!groundChecker.IsGrounded)
-            return;
+        if (!jumpRequested) return;
+        jumpRequested = false;
 
-        if (!characterInput.Jump)
-            return;
+        if (!groundChecker.IsGrounded) return;
 
         verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
     }
