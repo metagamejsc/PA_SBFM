@@ -4,7 +4,6 @@ public class CharacterAnimation : MonoBehaviour
 {
     [SerializeField] private Animator animator;
     [SerializeField] private CharacterMotor motor;
-
     private void Update()
     {
         UpdateAnimation();

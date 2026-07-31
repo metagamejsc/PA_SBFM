@@ -4,6 +4,7 @@ public class CharacterInput : MonoBehaviour
 {
     [SerializeField] private Joystick joystick;
     [SerializeField] private JumpButton jumpButton;
+
     public Vector2 Move { get; private set; }
     public bool Jump { get; private set; }
 

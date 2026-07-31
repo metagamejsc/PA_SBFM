@@ -157,7 +157,7 @@ public class InputManager : MonoBehaviour
         {
             if (hit.distance > 25f)
             {
-                Debug.Log("So Far");
+                GameController.Ins.Far();
                 return;
             }
             CurrentInteractable = hit.collider.GetComponent<IInteractable>();
