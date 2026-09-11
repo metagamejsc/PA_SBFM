@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 
 public class Gift : MonoBehaviour
@@ -6,10 +7,17 @@ public class Gift : MonoBehaviour
     [SerializeField] private List<Hint> hints;
     [SerializeField] private AudioClip collectSound;
     [SerializeField] private ParticleSystem collectEffect;
-    [SerializeField] private CollectAction action;
-    [SerializeField] public Animator avatar;
-    [SerializeField] private bool unLocked;
+    [SerializeField] private Transform arrow;
+
     public bool collectDone;
+
+    public Transform Arrow => arrow;
+
+    private void Start()
+    {
+        arrow.DOLocalMoveY(5.8f, 0.5f).SetEase(Ease.Linear).SetLoops(-1, LoopType.Yoyo);
+    }
+
     public void ShowHints()
     {
         if (hints == null) return;
@@ -18,21 +26,20 @@ public class Gift : MonoBehaviour
             hints[i].ShowHint();
         }
     }
-    public void Collect(CharacterCollect character)
-    {
-        unLocked = true;
-        character.SetTarget(this, avatar);
-    }
+
+
     private void OnTriggerEnter(Collider collision)
     {
-        if (!unLocked || !collision.gameObject.CompareTag("Player")) return;
+        if (collectDone || !collision.gameObject.CompareTag("Player")) return;
+        GameController.Ins.CollectGift(this);
         collectDone = true;
-        //collectEffect.Play();
-        action.Collect();
+        collectEffect.Play();
         AudioController.Ins.PlaySFX(collectSound);
     }
+
     public void RemoveGift()
     {
-        //Destroy(gameObject);
+        transform.GetChild(0).gameObject.SetActive(false);
+        arrow.gameObject.SetActive(false);
     }
 }

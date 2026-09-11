@@ -12,7 +12,7 @@ public class RunEffect : CollectAction
     private Rigidbody rb;
     private Transform target;
     private bool isMoving;
-    
+
 
     private void Awake()
     {

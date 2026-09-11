@@ -23,7 +23,6 @@ public class Box : MonoBehaviour, IInteractable
     {
         avatar.SetActive(false);
         AudioController.Ins.PlaySFX(openSound);
-        GameController.Ins.UnBox(this);
     }
 
     private IEnumerator DestroyBox()

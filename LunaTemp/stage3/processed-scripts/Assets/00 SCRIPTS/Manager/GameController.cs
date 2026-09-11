@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
 
@@ -9,17 +11,26 @@ public class GameController : MonoBehaviour
     [SerializeField] private float timeToShowHint;
     [SerializeField] private int currentProgress;
     [SerializeField] private int target;
-    [SerializeField] private TextMeshProUGUI progressText;
+    [SerializeField] private TMP_Text progressText;
+    [SerializeField] private TMP_Text collectText;
     [SerializeField] private RectTransform completeScene;
-    [SerializeField] private List<BoxGift> boxGifts;
-    private Dictionary<Box, Gift> giftMap;
+    [SerializeField] private List<Gift> gifts;
     [SerializeField] private CharacterCollect collect;
     [SerializeField] private TutController tut;
+    [SerializeField] private Transform posWar;
+
     public static GameController Ins { get; private set; }
+
+    public Gift FirstGift => gifts != null && gifts.Count > 0 ? gifts[0] : null;
+
     private void Awake()
     {
         CreateIns();
-        MappingGift();
+    }
+
+    private void Start()
+    {
+        UpdateProgress();
     }
 
     private void CreateIns()
@@ -29,9 +40,11 @@ public class GameController : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+
         Ins = this;
         DontDestroyOnLoad(gameObject);
     }
+
     public void Far()
     {
         tut.ShowFarTut();
@@ -42,38 +55,30 @@ public class GameController : MonoBehaviour
         tut.ShowFailTut();
         StartCoroutine(ShowHint());
     }
-    private void MappingGift()
-    {
-        giftMap = new Dictionary<Box, Gift>();
-        foreach (BoxGift boxGift in boxGifts)
-        {
-            giftMap.Add(boxGift.Box, boxGift.SecretGift);
-        }
-    }
-    public void UnBox(Box box)
-    {
-        if (giftMap.ContainsKey(box)) Correct(box);
-        else Fail();
-    }
-    private void Correct(Box box)
-    {
-        CollectGift(giftMap[box]);
-    }
-    private void CollectGift(Gift gift)
+
+    public void CollectGift(Gift gift)
     {
         int collected = -1;
-        for (int i = 0; i < boxGifts.Count; i++)
+        for (int i = 0; i < gifts.Count; i++)
         {
-            if (boxGifts[i].SecretGift != gift) continue;
+            if (gifts[i] != gift) continue;
             collected = i;
             break;
         }
+
         if (collected == -1) return;
-        Gift g = boxGifts[collected].SecretGift;
-        boxGifts.RemoveAt(collected);
-        g.Collect(collect);
+        Gift g = gifts[collected];
+        gifts.RemoveAt(collected);
+        // g.Collect(collect);
+        collectText.transform.localScale = Vector3.zero;
+        collectText.transform.DOScale(1.2f, 0.3f).SetEase(Ease.OutCubic).OnComplete(() =>
+        {
+            collectText.transform.DOScale(1f, 0.2f).SetEase(Ease.OutCubic);
+        });
+        DOVirtual.DelayedCall(1f, () => { collectText.transform.localScale = Vector3.zero; });
         StartCoroutine(WaitForCollect(g));
     }
+
     private IEnumerator WaitForCollect(Gift g)
     {
         yield return new WaitUntil(() => g.collectDone);
@@ -84,31 +89,37 @@ public class GameController : MonoBehaviour
     private void UpdateProgress()
     {
         currentProgress++;
-        progressText.text = string.Format("{0}/{1}", currentProgress, target + 1);
+        progressText.text = string.Format("{0}/{1}", currentProgress, target);
+
+        if (gifts.Count == 2) MoveCollectToWar();
+
         if (currentProgress >= target) StartCoroutine(ShowComplete());
     }
+
+    private void MoveCollectToWar()
+    {
+        if (collect == null || posWar == null) return;
+        collect.Teleport(posWar.position, posWar.rotation);
+    }
+
     private void Complete()
     {
         tut.StopTut();
         completeScene.gameObject.SetActive(true);
     }
+
     private IEnumerator ShowComplete()
     {
         yield return new WaitForSeconds(timeToShowComplete);
         Complete();
     }
+
     private IEnumerator ShowHint()
     {
         yield return new WaitForSeconds(timeToShowHint);
-        foreach (BoxGift box in boxGifts)
+        foreach (Gift gift in gifts)
         {
-            box.SecretGift.ShowHints();
+            gift.ShowHints();
         }
     }
-}
-[System.Serializable]
-public struct BoxGift
-{
-    public Box Box;
-    public Gift SecretGift;
 }

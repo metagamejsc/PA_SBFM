@@ -7,6 +7,7 @@ public class GroundChecker : MonoBehaviour
     [SerializeField] private LayerMask groundLayer;
 
     public bool IsGrounded { get; private set; }
+    public LayerMask GroundLayer => groundLayer;
 
     private void Update()
     {
